@@ -2,7 +2,7 @@
 
 A single HTML page that allows you to view and pan the image of a remote Foscam IP camera.
 
-Note: This is a quick and dirty solution that works as-is.
+Note: This is a quick and dirty solution that works as-is. Not rocket science at all.
 
 ## Usage
 
@@ -31,13 +31,13 @@ The Foscam camera I used to test this page has an invalid TLS certificate (with 
 ## Screenshots
 
 ### Settings tab
-![](https://raw.githubusercontent.com/simple-cam-viewer/master/screenshots/settings-tab.png)
+![](https://raw.githubusercontent.com/balassy/simple-cam-viewer/master/screenshots/settings-tab.png)
 
 ### Image tab
-![](https://raw.githubusercontent.com/simple-cam-viewer/master/screenshots/image-tab.png)
+![](https://raw.githubusercontent.com/balassy/simple-cam-viewer/master/screenshots/image-tab.png)
 
 ### Stream tab
-![](https://raw.githubusercontent.com/simple-cam-viewer/master/screenshots/stream-tab.png)
+![](https://raw.githubusercontent.com/balassy/simple-cam-viewer/master/screenshots/stream-tab.png)
 
 ## About the author
 
