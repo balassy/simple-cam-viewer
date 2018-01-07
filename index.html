@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <link type="text/css" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.100.2/css/materialize.min.css" media="screen,projection" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Simple camera viewer</title>
+
+  <style>
+    .btn-move {
+      padding: 0 1rem;
+    }
+
+    .table-move {
+      width: auto;
+      margin: auto;
+    }
+
+    .table-move td {
+      width: 50px;
+      padding: 5px;
+    }
+  </style>
+
+  <script type="text/javascript" src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
+  <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.100.2/js/materialize.min.js"></script>
+</head>
+
+<body>
+  <div class="row">
+    <div class="col s12">
+      <ul class="tabs">
+        <li class="tab col s4">
+          <a class="active" href="#divSettings">Settings</a>
+        </li>
+        <li class="tab col s4">
+          <a href="#divImage">Image</a>
+        </li>
+        <li class="tab col s4">
+          <a href="#divStream">Stream</a>
+        </li>
+      </ul>
+    </div>
+
+    <div id="divSettings" class="col s12">
+      <div class="row">
+        <div class="col s6">
+          <label for="txtHost">Host (e.g. fm6501.myfoscam.org):</label>
+          <input id="txtHost" />
+        </div>
+
+        <div class="col s6">
+          <label for="txtPort">Port (e.g. 8888):</label>
+          <input id="txtPort" />
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col s6">
+          <label for="txtUser">User (e.g. admin):</label>
+          <input id="txtUser" />
+        </div>
+
+        <div class="col s6">
+          <label for="txtPassword">Password:</label>
+          <input id="txtPassword" type="password" />
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col s12">
+          <a id="btnConnect" class="waves-effect btn">Connect & Save</a>
+          <a id="btnDisconnect" class="waves-effect btn">Disconnect & Clear</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="divImage" class="col s12">
+    <div class="row">
+      <div class="col s6 center">
+        <table class="table-move">
+          <tr>
+            <td></td>
+            <td>
+              <button id="btnMoveUp" class="btn btn-move"><i class="material-icons">keyboard_arrow_up</i></button>
+            </td>
+            <td></td>
+          </tr>
+          <tr>
+            <td>
+              <button id="btnMoveLeft" class="btn btn-move"><i class="material-icons">keyboard_arrow_left</i></button>
+            </td>
+            <td>
+              <button id="btnMoveHome" class="btn btn-move"><i class="material-icons">home</i></button>
+            </td>
+            <td>
+              <button id="btnMoveRight" class="btn btn-move"><i class="material-icons">keyboard_arrow_right</i></button>
+            </td>
+          </tr>
+          <tr>
+            <td></td>
+            <td>
+              <button id="btnMoveDown" class="btn btn-move"><i class="material-icons">keyboard_arrow_down</i></button>
+            </td>
+            <td></td>
+          </tr>
+        </table>
+      </div>
+
+      <div class="col s6 center">
+        <button id="btnRefresh" class="btn">Refresh</button>
+        <button id="btnClear" class="btn">Clear</button>
+      </div>
+    </div>
+    
+    <div class="row">
+      <div class="col s12 center">
+        <img id="pict" class="responsive-img" alt="Click Refresh to load or update the camera image" />
+      </div>
+    </div>
+  </div>
+
+  <div id="divStream" class="col s12">
+    <div class="row">
+      <div class="col s12">
+        <label for="txtStreamUrl">Stream URL:</label>
+        <input id="txtStreamUrl" />
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      var config = {
+        baseUrl: '',
+        host: '',
+        port: '',
+        user: '',
+        password: ''
+      };
+
+      var ConfigStorage = {
+        key: 'config',
+
+        save: (value) => {
+          var str = JSON.stringify(value);
+          localStorage.setItem(ConfigStorage.key, str);
+        },
+
+        load: () => {
+          var str = localStorage.getItem(ConfigStorage.key);
+          return JSON.parse(str);
+        },
+
+        clear: () => {
+          localStorage.removeItem(ConfigStorage.key);
+        }
+      };
+
+      var SettingsPage = {
+        elements: {
+          btnConnect: document.getElementById('btnConnect'),
+          btnDisconnect: document.getElementById('btnDisconnect'),
+
+          txtHost: document.getElementById('txtHost'),
+          txtPort: document.getElementById('txtPort'),
+          txtUser: document.getElementById('txtUser'),
+          txtPassword: document.getElementById('txtPassword')
+        },
+
+        init: () => {
+          SettingsPage.elements.btnConnect.addEventListener('click', SettingsPage.onBtnConnectClicked);
+          SettingsPage.elements.btnDisconnect.addEventListener('click', SettingsPage.onBtnDisconnectClicked);
+
+          var storedConfig = ConfigStorage.load();
+          if (storedConfig) {
+            SettingsPage.elements.txtHost.value = storedConfig.host;
+            SettingsPage.elements.txtPort.value = storedConfig.port;
+            SettingsPage.elements.txtUser.value = storedConfig.user;
+          }
+        },
+
+        onBtnConnectClicked: () => {
+          config.host = SettingsPage.elements.txtHost.value;
+          config.port = SettingsPage.elements.txtPort.value;
+          config.user = SettingsPage.elements.txtUser.value;
+          config.password = SettingsPage.elements.txtPassword.value;
+          config.baseUrl = `https://${config.host}:${config.port}/cgi-bin/CGIProxy.fcgi?usr=${config.user}&pwd=${config.password}&cmd=`;
+
+          var storedConfig = {
+            host: config.host,
+            port: config.port,
+            user: config.user
+          };
+          ConfigStorage.save(storedConfig);
+
+          StreamPage.refreshUrl();
+        },
+
+        onBtnDisconnectClicked: () => {
+          SettingsPage.elements.txtHost.value = config.host = '';
+          SettingsPage.elements.txtPort.value = config.port = '';
+          SettingsPage.elements.txtUser.value = config.user = '';
+          SettingsPage.elements.txtPassword.value = config.password = '';
+
+          ConfigStorage.clear();
+
+          StreamPage.refreshUrl();
+        }
+      };
+
+      var StreamPage = {
+        elements: {
+          txtStreamUrl: document.getElementById('txtStreamUrl')
+        },
+
+        init: () => {
+          StreamPage.refreshUrl();
+        },
+
+        refreshUrl: () => {
+          StreamPage.elements.txtStreamUrl.value = config.host
+           ? `rtsp://${config.user}:${config.password}@${config.host}.myfoscam.org:${config.port}/videoMain`
+           : '(Please click Settings and specify the connection parameters.)';
+        }
+      };
+
+      function init() {
+        function initButtons() {
+
+
+          document.getElementById('btnMoveHome').addEventListener('click', onBtnMoveHomeClicked);
+          document.getElementById('btnMoveUp').addEventListener('mousedown', onBtnMoveUpClicked);
+          document.getElementById('btnMoveDown').addEventListener('mousedown', onBtnMoveDownClicked);
+          document.getElementById('btnMoveLeft').addEventListener('mousedown', onBtnMoveLeftClicked);
+          document.getElementById('btnMoveRight').addEventListener('mousedown', onBtnMoveRightClicked);
+          document.querySelectorAll('#btnMoveUp, #btnMoveDown, #btnMoveLeft, #btnMoveRight').forEach(el => el.addEventListener('mouseup', onBtnMoveReleased));
+
+          document.getElementById('btnRefresh').addEventListener('click', onBtnRefreshClicked);
+          document.getElementById('btnClear').addEventListener('click', onBtnClearClicked);
+        }
+
+        initButtons();
+
+        SettingsPage.init();
+        StreamPage.init();
+      }
+
+      init();
+
+      function onBtnMoveHomeClicked() {
+        execute('ptzReset');
+        setTimeout(() => {
+          snapPicture();
+        }, 4000);
+      }
+
+      function onBtnMoveUpClicked() {
+        execute('ptzMoveUp');
+      }
+
+      function onBtnMoveDownClicked() {
+        execute('ptzMoveDown');
+      }
+
+      function onBtnMoveLeftClicked() {
+        execute('ptzMoveLeft');
+      }
+
+      function onBtnMoveRightClicked() {
+        execute('ptzMoveRight');
+      }
+
+      function onBtnMoveReleased() {
+        execute('ptzStopRun');
+
+        setTimeout(() => {
+          snapPicture();
+        }, 500);
+      }
+
+
+      function snapPicture() {
+        console.log('getting picture');
+        var imgUrl = config.baseUrl + 'snapPicture2&rnd=' + Math.random().toString().substring(2);
+        document.getElementById('pict').src = imgUrl;
+      }
+
+      function execute(commandName) {
+        console.log('executing: ', commandName);
+        document.getElementById('pict').src = '';
+
+        var url = config.baseUrl + commandName + '&rnd=' + Math.random().toString().substring(2);;
+
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', url, true);
+        xhr.send(null);
+      }
+
+      function onBtnRefreshClicked() {
+        snapPicture();
+      }
+
+      function onBtnClearClicked() {
+        document.getElementById('pict').src = '';
+      }
+    })();
+  </script>
+</body>
+
+</html>
